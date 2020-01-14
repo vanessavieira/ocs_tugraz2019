@@ -20,13 +20,16 @@ def obj_f(alpha, l, x):
 
 def estimate_position(towers, z):
     #initial value (2,2)
-    xsi = [np.array([2,2])]
-    #lamda value {0.6, 0.9}
+    # lamda value {0.6, 0.9}
     lamda = 0.9
+    xsi = [np.array([2,2])]
+
     #H matrix initialization
     H = np.eye(2) * 0.01
     #objective func
     obj_func = []
+    # generate 2D grid
+
     for alpha in z:
         #take value from last iteration
         x = xsi[-1]
@@ -38,13 +41,49 @@ def estimate_position(towers, z):
         newX = x + np.linalg.pinv(H).dot(Ci.transpose()).dot(np.subtract(zi,np.dot(gradh_func,x)))
         xsi.append(newX)
         obj_func.append(obj_f(alpha, towers, x))
-    x = np.asarray(xsi)[:, 0]
-    l1 = np.asarray(towers)[0, :]
-    l2 = np.asarray(towers)[1, :]
-    y = np.asarray(xsi)[:, 1]
-    plt.scatter(x, y)
-    plt.scatter(l1, l2)
-    plt.show()
+
+    def plot_estimate_position():
+        plt.title('Estimating position for lambda = ' + str(lamda))
+        plt.plot(xsi[0][0], xsi[0][1], "*", color="green", markersize=15, label=r'initial position')
+
+        x = np.asarray(xsi)[:, 0]
+        l1 = np.asarray(towers)[0, :]
+        l2 = np.asarray(towers)[1, :]
+        y = np.asarray(xsi)[:, 1]
+
+        x_1 = np.linspace(-25,20,10)
+        x_2 = np.linspace(-25,20,10)
+        X_1,X_2 = np.meshgrid(x_1,x_2)
+        XY = np.stack([X_1.flatten(),X_2.flatten()],axis=0)
+
+        # def func(xy):
+        #     g_ = []
+        #     f_all = 0
+        #
+        #     g1 = np.subtract(z[59],np.arctan2((towers[1, 0] - xy[0]), (towers[0, 0] - xy[1])))
+        #     g2 = np.subtract(z[59],np.arctan2((towers[1, 1] - xy[0]), (towers[0, 1] - xy[1])))
+        #     g3 = np.subtract(z[59],np.arctan2((towers[1, 2] - xy[0]), (towers[0, 2] - xy[1])))
+        #
+        #     g_.append(g1)
+        #     g_.append(g2)
+        #     g_.append(g3)
+        #
+        #     f_all += lamda * (np.linalg.norm(g_) **2)
+        #     return f_all
+        #
+        # plt.contour(X_1, X_2, func(XY).reshape(X_1.shape))
+
+        # Z = func(XY)
+        # plt.contour(X_1, X_2, Z)
+
+        plt.scatter(x, y, label=r'sequential position')
+        plt.scatter(l1, l2, label=r'light tower')
+        plt.plot(xsi[-1][0],xsi[-1][1], "*", color="red", markersize=15, label=r'optimal position')
+        plt.legend(loc="lower right")
+        plt.show()
+        
+    plot_estimate_position()
+
     print("Estimated position:")
     print(xsi[-1])
     return xsi[-1]
@@ -73,11 +112,15 @@ def dg(l,t,x0, v):
         res.append(dgi)
     return res
 
+
 def estimate_motion(towers, z, x0):
     #position
     xs = [[x0[0], x0[1], 1,1]]
     position = []
+    t_80 = []
+    t_150 = []
     lamda = 0.9
+    t_final = 0
     # H matrix initialization
     H = np.eye(4)*0.01
     obj_func = []
@@ -94,13 +137,37 @@ def estimate_motion(towers, z, x0):
         newXsi = xsi + np.linalg.pinv(H).dot(Ci.transpose()).dot(np.subtract(zi, np.dot(Ci, xsi)))
         xs.append(newXsi)
         obj_func.append(func)
-    x = np.asarray(position)[:,0]
-    l1 = np.asarray(towers)[0,:]
-    l2 = np.asarray(towers)[1, :]
-    y = np.asarray(position)[:,1]
-    plt.scatter(x,y)
-    plt.scatter(l1,l2)
-    plt.show()
+        if (t < 80):
+            t_80.append(x)
+            t_150.append(x)
+        if ( 80 < t < 150):
+            t_150.append(x)
+
+        t_final = t
+
+    print(t_final)
+    def plot_estimate_motion(positions, t):
+        plt.title('Estimating motion for lambda = ' + str(lamda) + ' with t = ' +str(t))
+        plt.plot(xs[0][0], xs[0][1], "*", color="green", markersize=15, label=r'initial position')
+
+        x = np.asarray(positions)[:, 0]
+        l1 = np.asarray(towers)[0, :]
+        l2 = np.asarray(towers)[1, :]
+        y = np.asarray(positions)[:, 1]
+
+        # x_1 = np.linspace(-5,25,1)
+        # x_2 = np.linspace(-25, 15, 1)
+        # plt.xlim(-5, 25)
+        # plt.plot(x_1,x_2,func)
+        plt.scatter(x, y, label=r'sequential position')
+        plt.scatter(l1, l2, label=r'light tower')
+        plt.plot(positions[-1][0], positions[-1][1], "*", color="red", markersize=15, label=r'optimal position')
+        plt.legend(loc="lower right")
+        plt.show()
+
+    plot_estimate_motion(t_80, 80)
+    plot_estimate_motion(t_150, 150)
+
     print("Final position:")
     print(position[-1])
     return position[-1]

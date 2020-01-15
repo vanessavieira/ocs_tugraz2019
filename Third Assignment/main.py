@@ -25,7 +25,7 @@ def dh(l, x):
 def estimate_position(towers, z):
     # initial value (2,2)
     # lamda value {0.6, 0.9}
-    lamda = 0.6
+    lamda = 0.9
     xsi = [np.array([2, 2])]
 
     # H matrix initialization
@@ -55,8 +55,8 @@ def estimate_position(towers, z):
         y = np.asarray(xsi)[:, 1]
 
         # generating 2D grid
-        x_1 = np.linspace(-30, 30, 100)
-        x_2 = np.linspace(-30, 30, 100)
+        x_1 = np.linspace(-25, 20, 20)
+        x_2 = np.linspace(-25, 20, 20)
         X_1, X_2 = np.meshgrid(x_1, x_2)
         XY = np.stack([X_1.flatten(), X_2.flatten()], axis=0)
 
@@ -65,13 +65,13 @@ def estimate_position(towers, z):
             for i in range(xy.shape[1]):
                 f = 0
                 for zii in z:
-                    gi = (np.linalg.norm(zii - h(towers, xy[:, i])) ** 2) / 2
-                    f += gi + lamda * f
+                    gi = (np.linalg.norm(np.subtract(zii, h(towers, xy[:, i]))) ** 2) / 2
+                    f = gi + lamda * f
                 f_all.append(f)
             return f_all
 
         objective = np.asarray(func(XY)).reshape(X_1.shape)
-        plt.contour(X_1, X_2, objective)
+        CS = plt.contour(X_1, X_2, objective)
 
         plt.scatter(x, y, label=r'sequential position')
         plt.scatter(l1, l2, label=r'light tower')
@@ -114,13 +114,13 @@ def dg(l, t, x0, v):
 
 def estimate_motion(towers, z, x0):
     # state vector
-    xs = [[x0[0], x0[1], 1, 1]]
+    xs = [[x0[0], x0[1], 0, 0]]
     position = []
     coursesx = []
     coursesy = []
     t_80 = []
     t_150 = []
-    lamda = 0.6
+    lamda = 0.9
     t_final = 0
     # H matrix initialization
     H = np.eye(4) * 0.01
@@ -155,8 +155,8 @@ def estimate_motion(towers, z, x0):
         l2 = np.asarray(towers)[1, :]
         y = np.asarray(positions)[:, 1]
 
-        x_1 = np.linspace(-10, 25, 100)
-        x_2 = np.linspace(-25, 10, 100)
+        x_1 = np.linspace(-10, 25, 50)
+        x_2 = np.linspace(-25, 10, 50)
         X_1, X_2 = np.meshgrid(x_1, x_2)
         XY = np.stack([X_1.flatten(), X_2.flatten()], axis=0)
 
@@ -164,14 +164,14 @@ def estimate_motion(towers, z, x0):
             f_all = []
             for i in range(xy.shape[1]):
                 f = 0
-                for zii in z:
-                    gi = (np.linalg.norm(g(zii, towers, xy[:, i])) ** 2) / 2
-                    f += (gi + lamda * f)
+                for k in range(0,t):
+                    gi = (np.linalg.norm(g(z[k], towers, xy[:, i])) ** 2) / 2
+                    f = (gi + lamda * f)
                 f_all.append(f)
             return f_all
 
         objective = np.asarray(func(XY)).reshape(X_1.shape)
-        plt.contour(X_1, X_2, objective)
+        plt.contour(X_1, X_2, objective, 13)
 
         plt.scatter(x, y, label=r'sequential position')
         plt.scatter(l1, l2, label=r'light tower')
